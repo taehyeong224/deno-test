@@ -1,5 +1,10 @@
 {
   "compilerOptions": {
+    "plugins": [
+      {
+        "name": "typescript-deno-plugin"
+      }
+    ],
     "allowJs": false,
     "allowUmdGlobalAccess": false,
     "allowUnreachableCode": false,
@@ -11,7 +16,7 @@
     "generateCpuProfile": "profile.cpuprofile",
     "jsx": "react",
     "jsxFactory": "React.createElement",
-    "lib": ["dom"],
+    "lib": ["es6", "dom"],
     "noFallthroughCasesInSwitch": false,
     "noImplicitAny": true,
     "noImplicitReturns": true,
