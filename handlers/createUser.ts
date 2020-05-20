@@ -9,18 +9,22 @@ export default async (R: { request: Request; response: Response }) => {
   }
 
   const {
-    value: { name, role, jiraAdmin },
+    value: { name, email, password },
   } = await R.request.body();
 
-  if (!name || !role) {
+  if (!name || !email || !password) {
     R.response.status = 422;
     R.response.body = {
       msg: "Incorrect user data. Name and role are required",
     };
     return;
   }
+  try {
+    const result = await createUser({ name, email, password });
 
-  const userId = await createUser({ name, role, jiraAdmin });
-
-  R.response.body = { msg: "User created", userId };
+    R.response.body = { msg: "User created", result };
+  } catch (e) {
+    console.error("error : ", e);
+    R.response.body = { msg: "fail", e };
+  }
 };

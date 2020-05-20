@@ -1,15 +1,13 @@
 import { fetchData, persistData } from "./db.ts";
 import { User } from "../models/user.ts";
 import createId from "../services/createId.ts";
+import { client } from "../config/mysqlConfig.ts";
+import { ExecuteResult } from "https://deno.land/x/mysql/src/connection.ts";
 
-type UserData = Pick<User, "name" | "role" | "jiraAdmin">;
+type UserData = Pick<User, "name" | "email" | "password">;
 
-export const getUsers = async (): Promise<User[]> => {
-  const users = await fetchData();
-
-  // sort by name
-  return users.sort((a, b) => a.name.localeCompare(b.name));
-};
+export const getUsers = async (): Promise<User[]> =>
+  client.query(`select * from user`);
 
 export const getUser = async (userId: string): Promise<User | undefined> => {
   const users = await fetchData();
@@ -17,25 +15,32 @@ export const getUser = async (userId: string): Promise<User | undefined> => {
   return users.find(({ id }) => id === userId);
 };
 
-export const createUser = async (userData: UserData): Promise<string> => {
-  const users = await fetchData();
-
+export const createUser = async (
+  userData: UserData,
+): Promise<ExecuteResult> => {
   const newUser: User = {
     id: createId(),
     name: String(userData.name),
-    role: String(userData.role),
-    jiraAdmin: "jiraAdmin" in userData ? Boolean(userData.jiraAdmin) : false,
-    added: new Date(),
+    email: String(userData.email),
+    password: String(userData.password),
+    created_at: new Date(),
+    updated_at: new Date(),
   };
-
-  await persistData([...users, newUser]);
-
-  return newUser.id;
+  return client.execute(
+    `INSERT INTO user(name, email, password, created_at, updated_at) values(?, ?, ?, ?, ?)`,
+    [
+      newUser.name,
+      newUser.email,
+      newUser.password,
+      newUser.created_at,
+      newUser.updated_at,
+    ],
+  );
 };
 
 export const updateUser = async (
   userId: string,
-  userData: UserData
+  userData: UserData,
 ): Promise<void> => {
   const user = await getUser(userId);
 
@@ -43,20 +48,10 @@ export const updateUser = async (
     throw new Error("User not found");
   }
 
-  const updatedUser = {
-    ...user,
-    name: userData.name !== undefined ? String(userData.name) : user.name,
-    role: userData.role !== undefined ? String(userData.role) : user.role,
-    jiraAdmin:
-      userData.jiraAdmin !== undefined
-        ? Boolean(userData.jiraAdmin)
-        : user.jiraAdmin,
-  };
-
   const users = await fetchData();
   const filteredUsers = users.filter((user) => user.id !== userId);
 
-  persistData([...filteredUsers, updatedUser]);
+  // persistData([...filteredUsers, updatedUser]);
 };
 
 export const deleteUser = async (userId: string): Promise<void> => {
